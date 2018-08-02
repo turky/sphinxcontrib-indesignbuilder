@@ -40,7 +40,7 @@ class IndesignXMLBuilder(Builder):
 
     def write_doc(self, docname, doctree):
         with open(os.path.join(self.outdir,
-                               docname + ".xml"), "w") as f:
+                               docname + ".xml"), "w", encoding="utf-8") as f:
             self.docwriter.write(doctree, f)
 
     def get_target_uri(self, *args, **kwds):
