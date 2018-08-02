@@ -227,7 +227,7 @@ class IndesignVisitor(NodeVisitor):
         pass
 
     def depart_reference(self, node):
-        pass
+        self.generator.endElement("ref")
 
     def visit_caption(self, node):
         pass
@@ -271,9 +271,9 @@ class IndesignVisitor(NodeVisitor):
             atts['class'] += ' image-reference'
         if 'reftitle' in node:
             atts['title'] = node['reftitle']
-        self.generator.startElement("footnote", atts)
+        self.generator.startElement("ref", atts)
 
-        self.generator.endElement("footnote")
+        #self.generator.endElement("ref")
 
 #        if node.get('secnumber'):
 #            self.body.append(('%s' + self.secnumber_suffix) %
@@ -383,6 +383,87 @@ class IndesignVisitor(NodeVisitor):
     def depart_container(self, node):
         pass
 
+    def visit_citation(self, node):
+        self.generator.startElement('a', {})
+        self.generator.outf.write(node.rawsource)
+        #print(node.__dict__)
+    
+    def depart_citation(self, node):
+        self.generator.endElement('a')
+
+    def visit_label(self, node):
+        self.generator.startElement('label', {})
+    
+    def depart_label(self, node):
+        self.generator.endElement('label')
+
+    def visit_footnote_reference(self, node):
+        pass
+    
+    def depart_footnote_reference(self, node):
+        pass
+
+    def visit_substitution_definition(self, node):
+        pass
+
+    def depart_substitution_definition(self, node):
+        pass
+
+    def visit_table(self, node):
+        self.generator.startElement('table', {})
+
+    def depart_table(self, node):
+        self.generator.endElement('table')
+
+    def visit_tgroup(self, node):
+        self.generator.startElement('tgroup', {})
+    
+    def depart_tgroup(self, node):
+        self.generator.endElement('tgroup')
+
+    def visit_colspec(self, node):
+        self.generator.startElement('colspec', {})
+
+    def depart_colspec(self, node):
+        self.generator.endElement('colspec')
+
+    def visit_thead(self, node):
+        self.generator.startElement('thead', {})
+
+    def depart_thead(self, node):
+        self.generator.endElement('thead')
+
+    def visit_row(self, node):
+        self.generator.startElement('row', {})
+
+    def depart_row(self, node):
+        self.generator.endElement('row')
+
+    def visit_entry(self, node):
+        self.generator.startElement('entry', {})
+
+    def depart_entry(self, node):
+        self.generator.endElement('entry')
+
+    def visit_tbody(self, node):
+        self.generator.startElement('tbody', {})
+
+    def depart_tbody(self, node):
+        self.generator.endElement('tbody')
+
+    def visit_problematic(self, node):
+        pass
+
+    def depart_problematic(self, node):
+        pass
+
+    def visit_superscript(self, node):
+        self.generator.startElement('sup', {})
+
+    def depart_superscript(self, node):
+        self.generator.endElement('sup')
+
+        
 
 class SingleIndesignVisitor(IndesignVisitor):
     sec_level = 0
