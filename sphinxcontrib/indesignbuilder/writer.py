@@ -32,6 +32,7 @@ class IndesignVisitor(NodeVisitor):
         self.generator.outf = self._output
 
         self.listenv = None
+        self.tableenv = False
         self.within_index = False
         self.restrect_newline = False
 
@@ -55,11 +56,11 @@ class IndesignVisitor(NodeVisitor):
 
     def visit_paragraph(self, node):
         # does not print <p> in list
-        if not self.listenv:
+        if not (self.listenv or self.tableenv):
             self.generator.startElement('p', {})
 
     def depart_paragraph(self, node):
-        if not self.listenv:
+        if not (self.listenv or self.tableenv):
             self.generator.endElement('p')
             self.newline()
 
@@ -436,16 +437,20 @@ class IndesignVisitor(NodeVisitor):
         pass
 
     def visit_table(self, node):
+        self.tableenv = True
         self.generator.startElement('table', {})
 
     def depart_table(self, node):
         self.generator.endElement('table')
+        self.tableenv = False
 
     def visit_tgroup(self, node):
-        self.generator.startElement('tgroup', {})
+        #self.generator.startElement('tgroup', {})
+        pass
 
     def depart_tgroup(self, node):
-        self.generator.endElement('tgroup')
+        #self.generator.endElement('tgroup')
+        pass
 
     def visit_colspec(self, node):
         self.generator.startElement('colspec', {})
@@ -454,22 +459,24 @@ class IndesignVisitor(NodeVisitor):
         self.generator.endElement('colspec')
 
     def visit_thead(self, node):
-        self.generator.startElement('thead', {})
+        self.generator.startElement('thead', {'aid:pstyle': 'header'})
 
     def depart_thead(self, node):
         self.generator.endElement('thead')
 
     def visit_row(self, node):
-        self.generator.startElement('row', {})
+        self.generator.startElement('tr', {})
 
     def depart_row(self, node):
-        self.generator.endElement('row')
+        self.generator.endElement('tr')
 
     def visit_entry(self, node):
-        self.generator.startElement('entry', {})
+        #self.generator.startElement('entry', {})
+        pass
 
     def depart_entry(self, node):
-        self.generator.endElement('entry')
+        #self.generator.endElement('entry')
+        pass
 
     def visit_tbody(self, node):
         self.generator.startElement('tbody', {})

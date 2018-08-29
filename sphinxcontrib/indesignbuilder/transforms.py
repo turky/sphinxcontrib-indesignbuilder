@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """
     sphinxcontrib-indesignbuilder
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    :copyright: Copyright 2015-2018 by the WAKAYAMA Shirou, Akihiro Takizawa
+    :license: BSD, see LICENSE for details.
+
 """
 
 from docutils import nodes
@@ -9,11 +14,12 @@ from sphinx.util import logging
 
 logger = logging.getLogger(__name__)
 
+
 class IdgxmlFootnoteTransform(SphinxTransform):
     default_priority = 100
 
     def apply(self):
-         # type: () -> None
+        # type: () -> None
         # TBD: footnote and footnote_ref can't work expected.
         #      autofootnote is going well.
         for fn_ref in self.document.footnote_refs:
@@ -22,11 +28,16 @@ class IdgxmlFootnoteTransform(SphinxTransform):
                     fn.remove(fn.children[0])
                     self.document.footnote_refs[fn_ref][0] = fn.deepcopy()
                     break
-        for autfn_ref in self.document.autofootnote_refs:
-            cur_id = autfn_ref['refid']
-            for autfn in self.document.autofootnotes:
-                if cur_id == autfn['ids'][0]:
-                    autfn.remove(autfn.children[0])
-                    autfn_ref.replace_self(autfn.deepcopy())
-                    autfn.parent.remove(autfn)
+        for autofn_ref in self.document.autofootnote_refs:
+            cur_id = autofn_ref['refid']
+            for autofn in self.document.autofootnotes:
+                if autofn['ids'][0] == cur_id:
+                    autofn.remove(autofn.children[0])
+                    cur_fn = autofn.deepcopy()
+                    autofn_ref.replace_self(cur_fn)
+                    autofn.parent.remove(autofn)
                     break
+
+
+def setup(app):
+    app.add_post_transform(IdgxmlFootnoteTransform)
