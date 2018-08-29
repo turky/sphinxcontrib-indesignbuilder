@@ -15,7 +15,7 @@ from sphinx.util.nodes import inline_all_toctrees
 from sphinxcontrib.indesignbuilder.writer import IndesignWriter
 from sphinxcontrib.indesignbuilder.webdbwriter import WebDBXMLWriter
 #from sphinxcontrib.indesignbuilder.directives import ColumnDirective
-
+from sphinxcontrib.indesignbuilder.translators import IdgxmlFootnoteTransform
 
 class IndesignXMLBuilder(Builder):
     """
@@ -220,5 +220,5 @@ def setup(app):
     app.add_builder(SingleIndesignXMLBuilder)
     app.add_builder(WebDBXMLBuilder)
     app.add_builder(SingleWebDBXMLBuilder)
-
+    app.add_post_transform(IdgxmlFootnoteTransform)
     #app.add_directive('column', ColumnDirective)
