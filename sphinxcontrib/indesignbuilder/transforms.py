@@ -20,6 +20,8 @@ class IdgxmlFootnoteTransform(SphinxTransform):
 
     def apply(self):
         # type: () -> None
+        if self.app.builder.name != 'indesign':
+            return
         # TBD: footnote and footnote_ref can't work expected.
         #      autofootnote is going well.
         for fn_ref in self.document.footnote_refs:

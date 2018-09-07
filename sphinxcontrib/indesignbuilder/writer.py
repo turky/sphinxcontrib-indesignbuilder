@@ -34,7 +34,7 @@ class IndesignVisitor(NodeVisitor):
         self.listenv = None
         self.tableenv = False
         self.within_index = False
-        self.restrect_newline = False
+        self.restrect_newline = True
 
     def newline(self):
         if self.restrect_newline is not True:
@@ -195,10 +195,10 @@ class IndesignVisitor(NodeVisitor):
         self.newline()
 
     def visit_literal(self, node):
-        self.generator.startElement("code", {})
+        self.generator.startElement('tt', {'type': 'inline-code'})
 
     def depart_literal(self, node):
-        self.generator.endElement("code")
+        self.generator.endElement('tt')
 
     def visit_comment(self, node):
         raise nodes.SkipNode
@@ -476,7 +476,7 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_entry(self, node):
         #self.generator.endElement('entry')
-        pass
+        self.generator.outf.write('\t')
 
     def visit_tbody(self, node):
         self.generator.startElement('tbody', {})
@@ -502,6 +502,19 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_column(self, node):
         self.generator.endElement('column')
+
+    def visit_raw(self, node):
+        self.generator.startElement('raw', {})
+
+    def depart_raw(self, node):
+        self.generator.endElement('raw')
+
+    def visit_transition(self, node):
+        self.generator.startElement('transition', {})
+
+    def depart_transition(self, node):
+        self.generator.endElement('transition')
+
 
 
 class SingleIndesignVisitor(IndesignVisitor):
