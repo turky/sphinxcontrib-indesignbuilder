@@ -258,7 +258,10 @@ class IndesignVisitor(NodeVisitor):
         self.generator.endElement("ref")
 
     def visit_caption(self, node):
-        pass
+        if node.parent.tagname == 'figure':
+            raise nodes.SkipNode
+        else:
+            pass
 
     def depart_caption(self, node):
         pass
