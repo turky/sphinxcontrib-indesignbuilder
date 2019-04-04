@@ -32,6 +32,7 @@ class IndesignVisitor(NodeVisitor):
         self.generator.outf = self._output
 
         self.listenv = None
+        self.listlevel = 0
         self.tableenv = False
         self.within_index = False
         self.restrect_newline = True
@@ -55,12 +56,12 @@ class IndesignVisitor(NodeVisitor):
         self.generator.outf.write("</doc>")
 
     def visit_paragraph(self, node):
-        # does not print <p> in list
-        if not (self.listenv or self.tableenv):
+        # not print <p> in list item
+        if (self.listenv is None) and (self.tableenv is not True):
             self.generator.startElement('p', {})
 
     def depart_paragraph(self, node):
-        if not (self.listenv or self.tableenv):
+        if (self.listenv is None) and (self.tableenv is not True):
             self.generator.endElement('p')
             self.newline()
 
@@ -73,17 +74,23 @@ class IndesignVisitor(NodeVisitor):
         self.newline()
 
     def visit_title(self, node):
-        level = "h" + str(self.sec_level)
-        self.generator.startElement('title',
-                                    {"aid:pstyle": level})
+        if self.tableenv is not True:
+            level = "h" + str(self.sec_level)
+            self.generator.startElement('title',
+                                        {"aid:pstyle": level})
+        else:
+            self.generator.startElement('caption', {})
 
     def depart_title(self, node):
-        self.generator.endElement('title')
-        dtp = u'<?dtp level="{0}" section="{1}"?>'.format(
-            self.sec_level,
-            node.astext(),
-        )
-        self.generator.outf.write(dtp)
+        if self.tableenv is not True:
+            self.generator.endElement('title')
+            dtp = u'<?dtp level="{0}" section="{1}"?>'.format(
+                self.sec_level,
+                node.astext(),
+            )
+            self.generator.outf.write(dtp)
+        else:
+            self.generator.endElement('caption')
 
         self.newline()
 
@@ -117,10 +124,16 @@ class IndesignVisitor(NodeVisitor):
         self.generator.endElement("i")
 
     def visit_math(self, node):
-        pass
+        self.generator.startElement("m", {})
 
     def depart_math(self, node):
-        pass
+        self.generator.endElement("m")
+
+    def visit_math_block(self, node):
+        self.generator.startElement("equation", {})
+
+    def depart_math_block(self, node):
+        self.generator.endElement("equation")
 
     def visit_doctest_block(self, node):
         self.generator.startElement("programlisting",
@@ -164,6 +177,12 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_warning(self, node):
         self.generator.endElement('warning')
+
+    def visit_caution(self, node):
+        self.generator.startElement('caution', {})
+
+    def depart_caution(self, node):
+        self.generator.endElement('caution')
 
     def visit_unknown_visit(self, node):
         pass
@@ -260,30 +279,61 @@ class IndesignVisitor(NodeVisitor):
     def visit_caption(self, node):
         if node.parent.tagname == 'figure':
             raise nodes.SkipNode
+        elif node.parent.attributes['literal_block']:
+            tagname = 'caption'
+            self.generator.startElement(tagname, {})
         else:
             pass
 
     def depart_caption(self, node):
+        if node.parent.attributes['literal_block']:
+            tagname = 'caption'
+            self.generator.endElement(tagname, {})
         pass
 
     def visit_bullet_list(self, node):
-        self.listenv = "ul"
-        self.generator.startElement("ul", {})
-        #self.newline()
+        self.listenv = 'ul'
+        self.listlevel = self.listlevel + 1
+        if self.listlevel > 1:
+            tagname = self.listenv + str(self.listlevel)
+            self.newline()
+            self.generator.startElement(tagname, {})
+        else:
+            tagname = self.listenv
+            self.generator.startElement(tagname, {})
+        self.newline()
 
     def depart_bullet_list(self, node):
-        self.listenv = None
-        self.generator.endElement("ul")
-        #self.newline()
+        if self.listlevel > 1:
+            tagname = self.listenv + str(self.listlevel)
+        else:
+            tagname = self.listenv
+        self.generator.endElement(tagname)
+        self.listlevel = self.listlevel - 1
+        if self.listlevel == 0:
+            self.listenv = None
+        self.newline()
 
     def visit_enumerated_list(self, node):
         self.listenv = "ol"
-        self.generator.startElement("ol", {})
-        #self.newline()
+        self.listlevel = self.listlevel + 1
+        if self.listlevel > 1:
+            tagname = self.listenv + str(self.listlevel)
+        else:
+            tagname = self.listenv
+        self.generator.startElement(tagname, {})
+        self.newline()
 
     def depart_enumerated_list(self, node):
-        self.listenv = None
-        self.generator.endElement("ol")
+        if self.listlevel > 1:
+            tagname = self.listenv + str(self.listlevel)
+        else:
+            tagname = self.listenv
+        self.generator.endElement(tagname)
+        self.listlevel = self.listlevel - 1
+        if self.listlevel == 0:
+            self.listenv = None
+        self.newline()
 
     def visit_reference(self, node):
         atts = {'class': 'reference'}
@@ -317,14 +367,12 @@ class IndesignVisitor(NodeVisitor):
         self.generator.endElement("footnote")
 
     def visit_list_item(self, node):
-        style = ""
-        if self.listenv:
-            style = self.listenv + "-item"
+        style = "%s-item" % (self.listenv)
         self.generator.startElement("li", {"aid:pstyle": style})
 
     def depart_list_item(self, node):
         self.generator.endElement("li")
-        #self.newline()
+        self.newline()
 
     def visit_field_list(self, node):
         self.generator.startElement("variablelist", {})
@@ -356,8 +404,8 @@ class IndesignVisitor(NodeVisitor):
         #self.newline()
 
     def depart_definition_list(self, node):
-        self.listenv = None
         self.generator.endElement("dl")
+        self.listenv = None
         self.newline()
 
     def visit_definition_list_item(self, node):
@@ -370,11 +418,9 @@ class IndesignVisitor(NodeVisitor):
 #        self.newline()
 
     def visit_term(self, node):
-        pass
         self.generator.startElement("dt", {})
 
     def depart_term(self, node):
-        pass
         self.generator.endElement("dt")
         #self.newline()
 
@@ -395,11 +441,11 @@ class IndesignVisitor(NodeVisitor):
 
     def visit_inline(self, node):
         if 'xref' in node['classes'] or 'term' in node['classes']:
-            self.add_text('*')
+            self.generator.outf.write('*')
 
     def depart_inline(self, node):
         if 'xref' in node['classes'] or 'term' in node['classes']:
-            self.add_text('*')
+            self.generator.outf.write('*')
 
     def visit_todo_node(self, node):
         pass
