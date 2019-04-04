@@ -15,7 +15,7 @@ from sphinx.util import logging
 logger = logging.getLogger(__name__)
 
 
-class IdgxmlFootnoteTransform(SphinxTransform):
+class IdgxmlTransform(SphinxTransform):
     default_priority = 100
 
     def apply(self):
@@ -39,7 +39,19 @@ class IdgxmlFootnoteTransform(SphinxTransform):
                     autofn_ref.replace_self(cur_fn)
                     autofn.parent.remove(autofn)
                     break
+        # compact list item having nested bullet list.
+        for node in self.document.traverse(nodes.bullet_list):
+            for list_item in node.children:
+                if isinstance(list_item.children[0], nodes.definition_list):
+                    nested_item = nodes.list_item()
+                    def_list = list_item.children[0]
+                    for sub_item in def_list:
+                        sub_para = nodes.paragraph()
+                        sub_para.append(sub_item[0][0])
+                        nested_item.append(sub_para)
+                        nested_item.append(sub_item[1][0].deepcopy())
+                    list_item.replace_self(nested_item)
 
 
 def setup(app):
-    app.add_post_transform(IdgxmlFootnoteTransform)
+    app.add_post_transform(IdgxmlTransform)
