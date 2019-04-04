@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
+import logging
+import os
+from xml.sax.saxutils import XMLGenerator
 
-from docutils.writers import Writer
 from docutils import nodes
 from docutils.nodes import NodeVisitor
-from xml.sax.saxutils import XMLGenerator
+from docutils.writers import Writer
 from six import StringIO
+from sphinx.ext.imgmath import MathExtError, get_tooltip, render_math
+from sphinx.locale import __, _
+from sphinx.util.math import get_node_equation_number, wrap_displaymath
 
-import os
+logger = logging.getLogger(__name__)
 
 class IndesignWriter(Writer):
     def __init__(self, builder, single=False):
@@ -48,7 +53,7 @@ class IndesignVisitor(NodeVisitor):
         self.generator.startDocument()
 
         self.generator.outf.write(
-            '<doc xmlns:aid="http://ns.adobe.com/AdobeInDesign/4.0/">')
+            '<doc xmlns:aid="http://ns.adobe.com/AdobeInDesign/4.0/" xmlns:aid5="http://ns.adobe.com/AdobeInDesign/5.0/">')
         self.sec_level = 0
 
     def depart_document(self, node):
@@ -245,14 +250,17 @@ class IndesignVisitor(NodeVisitor):
 
     def visit_image(self, node):
         caption = None
-        for c in node.parent.children:
-            if isinstance(c, nodes.caption):
-                caption = c.astext()
         legend = None
-        for c in node.parent.children:
-            if isinstance(c, nodes.legend):
-                legend = c.astext()
-
+        try:
+            for c in node.parent.children:
+                if isinstance(c, nodes.caption):
+                    caption = c.astext()
+            
+            for c in node.parent.children:
+                if isinstance(c, nodes.legend):
+                    legend = c.astext()
+        except AttributeError:
+            logger.debug("node doesn't have parent")
         filename = os.path.basename(os.path.splitext(node['uri'])[0])
         if node.get('inline'):
             self.generator.startElement('a', {"linkurl": filename})
@@ -288,7 +296,7 @@ class IndesignVisitor(NodeVisitor):
     def depart_caption(self, node):
         if node.parent.attributes['literal_block']:
             tagname = 'caption'
-            self.generator.endElement(tagname, {})
+            self.generator.endElement(tagname)
         pass
 
     def visit_bullet_list(self, node):
@@ -494,27 +502,33 @@ class IndesignVisitor(NodeVisitor):
         self.tableenv = False
 
     def visit_tgroup(self, node):
-        #self.generator.startElement('tgroup', {})
-        pass
+        self.generator.startElement('tgroup', {})
 
     def depart_tgroup(self, node):
-        #self.generator.endElement('tgroup')
+        self.generator.endElement('tgroup')
         pass
 
     def visit_colspec(self, node):
-        self.generator.startElement('colspec', {})
+        pass
+        # self.generator.startElement('colspec', {})
 
     def depart_colspec(self, node):
-        self.generator.endElement('colspec')
+        pass
+        # self.generator.endElement('colspec')
 
     def visit_thead(self, node):
-        self.generator.startElement('thead', {'aid:pstyle': 'header'})
-
+        # self.generator.startElement('thead', {'aid:pstyle': 'header'})
+        pass
     def depart_thead(self, node):
-        self.generator.endElement('thead')
+        # self.generator.endElement('thead')
+        pass
 
     def visit_row(self, node):
-        self.generator.startElement('tr', {})
+        if node.parent.tagname == 'thead':
+            cur_attr = {'type': 'header'}
+        else:
+            cur_attr = {}
+        self.generator.startElement('tr', cur_attr)
 
     def depart_row(self, node):
         self.generator.endElement('tr')
@@ -544,6 +558,12 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_superscript(self, node):
         self.generator.endElement('sup')
+
+    def visit_subscript(self, node):
+        self.generator.startElement('sub', {})
+
+    def depart_subscript(self, node):
+        self.generator.endElement('sub')
 
     def visit_column(self, node):
         self.generator.startElement('column', {})
