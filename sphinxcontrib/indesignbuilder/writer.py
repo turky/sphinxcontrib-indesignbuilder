@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from docutils.writers import Writer
+import logging
+import os
+from xml.sax.saxutils import XMLGenerator
+
 from docutils import nodes
 from docutils.nodes import NodeVisitor
-from xml.sax.saxutils import XMLGenerator
+from docutils.writers import Writer
 from six import StringIO
+from sphinx.ext.imgmath import MathExtError, get_tooltip, render_math
+from sphinx.locale import __, _
+from sphinx.util.math import get_node_equation_number, wrap_displaymath
 
-import os
+logger = logging.getLogger(__name__)
+
 
 class IndesignWriter(Writer):
     def __init__(self, builder, single=False):
@@ -124,13 +131,67 @@ class IndesignVisitor(NodeVisitor):
         self.generator.endElement("i")
 
     def visit_math(self, node):
-        self.generator.startElement("m", {})
+        if node.astext().find('\\') == -1:
+            self.generator.startElement("m", {})
+        else:
+            try:
+                fname, depth = render_math(self, '$' + node.astext() + '$')
+            except MathExtError as exc:
+                msg = str(exc)
+                sm = nodes.system_message(msg, type='WARNING', level=2,
+                                          backrefs=[], source=node.astext())
+                sm.walkabout(self)
+                logger.warning(__('display latex %r: %s'), node.astext(), msg)
+                raise nodes.SkipNode
+            if fname is None:
+                # something failed -- use text-only as a bad substitute
+                self.body.append('<m>%s</m>' %
+                                 self.encode(node.astext()).strip())
+            else:
+                c = ('<img class="math" src="%s"' % fname) \
+                    + get_tooltip(self, node)
+                if depth is not None:
+                    c += ' style="vertical-align: %dpx"' % (-depth)
+                self.body.append(c + '/>')
+            raise nodes.SkipNode
 
     def depart_math(self, node):
         self.generator.endElement("m")
 
     def visit_math_block(self, node):
-        self.generator.startElement("equation", {})
+        if node.astext().find("\\") == -1:
+            self.generator.startElement("equation", {})
+        else:
+            # TODO: following process separate as function except skipNode.
+            if node['nowrap']:
+                latex = node.astext()
+            else:
+                latex = wrap_displaymath(node.astext(), None, False)
+            try:
+                fname, depth = render_math(self, latex)
+            except MathExtError as exc:
+                msg = str(exc)
+                sm = nodes.system_message(msg, type='WARNING', level=2,
+                                          backrefs=[], source=node.astext())
+                sm.walkabout(self)
+                logger.warning(__('inline latex %r: %s'), node.astext(), msg)
+                raise nodes.SkipNode
+            self.body.append(self.starttag(node, 'div', CLASS='math'))
+            self.body.append('<p>')
+            if node['number']:
+                number = get_node_equation_number(self, node)
+                self.body.append('<span class="eqno">(%s)' % number)
+                self.add_permalink_ref(node, _('Permalink to this equation'))
+                self.body.append('</span>')
+            if fname is None:
+                # something failed -- use text-only as a bad substitute
+                self.body.append('<span class="math">%s</span></p>\n</div>' %
+                                 self.encode(node.astext()).strip())
+            else:
+                self.body.append(
+                    ('<img src="%s"' % fname) + get_tooltip(self, node) +
+                    '/></p>\n</div>')
+            raise nodes.SkipNode
 
     def depart_math_block(self, node):
         self.generator.endElement("equation")
@@ -266,7 +327,7 @@ class IndesignVisitor(NodeVisitor):
                 self.generator.outf.write(caption)
                 self.generator.endElement('caption')
             if legend:
-               self.add_lines([legend])
+                self.add_lines([legend])
             self.generator.endElement('img')
         raise nodes.SkipNode
 
@@ -354,14 +415,14 @@ class IndesignVisitor(NodeVisitor):
             atts['title'] = node['reftitle']
         self.generator.startElement("ref", atts)
 
-        #self.generator.endElement("ref")
+        # self.generator.endElement("ref")
 
 #        if node.get('secnumber'):
 #            self.body.append(('%s' + self.secnumber_suffix) %
 #                             '.'.join(map(str, node['secnumber'])))
 
     def visit_footnote(self, node):
-        self.generator.startElement("footnote", {'id':node['ids'][0]})
+        self.generator.startElement("footnote", {'id': node['ids'][0]})
 
     def depart_footnote(self, node):
         self.generator.endElement("footnote")
@@ -401,7 +462,7 @@ class IndesignVisitor(NodeVisitor):
     def visit_definition_list(self, node):
         self.listenv = "dl"
         self.generator.startElement("dl", {})
-        #self.newline()
+        # self.newline()
 
     def depart_definition_list(self, node):
         self.generator.endElement("dl")
@@ -422,18 +483,18 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_term(self, node):
         self.generator.endElement("dt")
-        #self.newline()
+        # self.newline()
 
     def visit_definition(self, node):
         self.generator.startElement("dd", {})
 
     def depart_definition(self, node):
         self.generator.endElement("dd")
-        #self.newline()
+        # self.newline()
 
     def visit_block_quote(self, node):
         self.generator.startElement("quote", {})
-        #self.newline()
+        # self.newline()
 
     def depart_block_quote(self, node):
         self.generator.endElement("quote")
@@ -462,7 +523,7 @@ class IndesignVisitor(NodeVisitor):
     def visit_citation(self, node):
         self.generator.startElement('a', {})
         self.generator.outf.write(node.rawsource)
-        #print(node.__dict__)
+        # print(node.__dict__)
 
     def depart_citation(self, node):
         self.generator.endElement('a')
@@ -494,11 +555,11 @@ class IndesignVisitor(NodeVisitor):
         self.tableenv = False
 
     def visit_tgroup(self, node):
-        #self.generator.startElement('tgroup', {})
+        # self.generator.startElement('tgroup', {})
         pass
 
     def depart_tgroup(self, node):
-        #self.generator.endElement('tgroup')
+        # self.generator.endElement('tgroup')
         pass
 
     def visit_colspec(self, node):
@@ -520,11 +581,11 @@ class IndesignVisitor(NodeVisitor):
         self.generator.endElement('tr')
 
     def visit_entry(self, node):
-        #self.generator.startElement('entry', {})
+        # self.generator.startElement('entry', {})
         pass
 
     def depart_entry(self, node):
-        #self.generator.endElement('entry')
+        # self.generator.endElement('entry')
         self.generator.outf.write('\t')
 
     def visit_tbody(self, node):
@@ -547,7 +608,8 @@ class IndesignVisitor(NodeVisitor):
 
     def visit_column(self, node):
         self.generator.startElement('column', {})
-        self.generator.outf.write('<title aid:pstyle="column-title">%s</title>' % node['title'])
+        self.generator.outf.write(
+            '<title aid:pstyle="column-title">%s</title>' % node['title'])
 
     def depart_column(self, node):
         self.generator.endElement('column')
@@ -563,7 +625,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_transition(self, node):
         self.generator.endElement('transition')
-
 
 
 class SingleIndesignVisitor(IndesignVisitor):
