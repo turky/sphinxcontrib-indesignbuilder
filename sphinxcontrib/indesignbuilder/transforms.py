@@ -8,9 +8,18 @@
 
 """
 
+import re
+
 from docutils import nodes
+from docutils.nodes import Text, subscript, superscript
+from sphinx import addnodes
+from sphinx.locale import __
 from sphinx.transforms import SphinxTransform
 from sphinx.util import logging
+
+from math_symbols import math_equation_symbols
+
+SUPER_OR_SUB = re.compile('[_^]\\{[^}]+\\}')
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +60,50 @@ class IdgxmlTransform(SphinxTransform):
                         nested_item.append(sub_para)
                         nested_item.append(sub_item[1][0].deepcopy())
                     list_item.replace_self(nested_item)
+
+        for node in self.document.traverse(addnodes.nodes.math_block):
+            math_source = self.replace_math_symbol(node.astext())
+            if math_source.find('\\') == -1:
+                node.children = self.text_to_super_or_subscript(math_source)
+            else:
+                pass
+        for node in self.document.traverse(addnodes.nodes.math):
+            math_source = self.replace_math_symbol(node.astext())
+            if math_source.find('\\') == -1:
+                node.children = self.text_to_super_or_subscript(math_source)
+            else:
+                pass
+
+    def replace_math_symbol(self, source):
+        # type: (str) -> str
+        logger.warning(__('replace TeX equation symbols.'))
+        for name in math_equation_symbols.keys():
+            symbol = chr(math_equation_symbols[name])
+            source = source.replace(f'\\{name}', symbol)
+        return source
+
+    def text_to_super_or_subscript(self, source):
+        # type: (str) -> list
+        items = SUPER_OR_SUB.split(source)
+        subitems = SUPER_OR_SUB.findall(source)
+        buf = []
+        pos = 0
+        for item in items:
+            if item == '':
+                if subitems[pos].startswith('^'):
+                    buf.append(
+                        superscript(
+                            text=subitems[pos].replace(
+                                '^{', '').replace('}', '')))
+                elif subitems[pos].startswith('_'):
+                    buf.append(
+                        subscript(
+                            text=subitems[pos].replace(
+                                '_{', '').replace('}', '')))
+                pos = pos + 1
+            else:
+                buf.append(Text(item))
+        return buf
 
 
 def setup(app):

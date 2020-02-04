@@ -409,7 +409,6 @@ class IndesignVisitor(NodeVisitor):
     def visit_definition_list(self, node):
         self.listenv = "dl"
         self.generator.startElement("dl", {})
-        #self.newline()
 
     def depart_definition_list(self, node):
         self.generator.endElement("dl")
@@ -423,25 +422,21 @@ class IndesignVisitor(NodeVisitor):
     def depart_definition_list_item(self, node):
         pass
 #        self.generator.endElement("dt")
-#        self.newline()
 
     def visit_term(self, node):
         self.generator.startElement("dt", {})
 
     def depart_term(self, node):
         self.generator.endElement("dt")
-        #self.newline()
 
     def visit_definition(self, node):
         self.generator.startElement("dd", {})
 
     def depart_definition(self, node):
         self.generator.endElement("dd")
-        #self.newline()
 
     def visit_block_quote(self, node):
         self.generator.startElement("quote", {})
-        #self.newline()
 
     def depart_block_quote(self, node):
         self.generator.endElement("quote")
@@ -506,7 +501,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_tgroup(self, node):
         self.generator.endElement('tgroup')
-        pass
 
     def visit_colspec(self, node):
         pass
@@ -517,11 +511,10 @@ class IndesignVisitor(NodeVisitor):
         # self.generator.endElement('colspec')
 
     def visit_thead(self, node):
-        # self.generator.startElement('thead', {'aid:pstyle': 'header'})
-        pass
+        self.generator.startElement('thead', {'aid:pstyle': 'header'})
+
     def depart_thead(self, node):
-        # self.generator.endElement('thead')
-        pass
+        self.generator.endElement('thead')
 
     def visit_row(self, node):
         if node.parent.tagname == 'thead':
@@ -583,7 +576,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_transition(self, node):
         self.generator.endElement('transition')
-
 
 
 class SingleIndesignVisitor(IndesignVisitor):
