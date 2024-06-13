@@ -93,7 +93,7 @@ class IndesignVisitor(NodeVisitor):
     def depart_paragraph(self, node):
         if not (self.listenv or self.tableenv or self.footnote_env):
             self.generator.endElement('p')
-            self.newline()
+        self.newline()
 
     def visit_section(self, node):
         assert not self.within_index
@@ -509,6 +509,12 @@ class IndesignVisitor(NodeVisitor):
         # self.generator.endElement("todo")
         pass
 
+    def visit_attribution(self, node):
+        self.generator.startElement('attribution', {})
+
+    def depart_attribution(self, node):
+        self.generator.endElement('attribution')
+
     def visit_container(self, node):
         if 'literal-block-wrapper' in node['classes']:
             self.generator.startElement('codelist', {})
@@ -652,12 +658,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_label(self, node):
         self.generator.endElement('label')
-
-    def visit_footnote_reference(self, node):
-        self.generator.startElement('footnote', {'href': node['refid']})
-
-    def depart_footnote_reference(self, node):
-        self.generator.endElement('footnote')
 
     def visit_substitution_definition(self, node):
         pass
