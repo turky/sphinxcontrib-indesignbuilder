@@ -219,6 +219,48 @@ class IndesignVisitor(NodeVisitor):
             self.adomonienv = None
         self.generator.endElement(label)
 
+    def visit_admonition(self, node):
+        self._visit_adomonitions(node, 'admonition')
+
+    def depart_admonition(self, node):
+        self._depart_adomonitions(node, 'admonition')
+
+    def visit_attention(self, node):
+        self._visit_adomonitions(node, 'attention')
+
+    def depart_attention(self, node):
+        self._depart_adomonitions(node, 'attention')
+
+    def visit_caution(self, node):
+        self._visit_adomonitions(node, 'caution')
+
+    def depart_caution(self, node):
+        self._depart_adomonitions(node, 'caution')
+
+    def visit_danger(self, node):
+        self._visit_adomonitions(node, 'danger')
+
+    def depart_danger(self, node):
+        self._depart_adomonitions(node, 'danger')
+
+    def visit_error(self, node):
+        self._visit_adomonitions(node, 'error')
+
+    def depart_error(self, node):
+        self._depart_adomonitions(node, 'error')
+
+    def visit_hint(self, node):
+        self._visit_adomonitions(node, 'hint')
+
+    def depart_hint(self, node):
+        self._depart_adomonitions(node, 'hint')
+
+    def visit_important(self, node):
+        self._visit_adomonitions(node, 'important')
+
+    def depart_important(self, node):
+        self._depart_adomonitions(node, 'important')
+
     def visit_note(self, node):
         self._visit_adomonitions(node, 'note')
 
@@ -231,12 +273,6 @@ class IndesignVisitor(NodeVisitor):
     def depart_tip(self, node):
         self._depart_adomonitions(node, 'tip')
 
-    def visit_caution(self, node):
-        self._visit_adomonitions(node, 'caution')
-
-    def depart_caution(self, node):
-        self._depart_adomonitions(node, 'caution')
-
     def visit_warning(self, node):
         self._visit_adomonitions(node, 'warning')
 
@@ -248,12 +284,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_topic(self, node):
         self._depart_adomonitions(node, 'topic')
-
-    def visit_admonition(self, node):
-        self._visit_adomonitions(node, 'admonition')
-
-    def depart_admonition(self, node):
-        self._depart_adomonitions(node, 'admonition')
 
     def visit_unknown_visit(self, node):
         pass
