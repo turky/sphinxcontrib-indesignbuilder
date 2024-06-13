@@ -344,7 +344,11 @@ class IndesignVisitor(NodeVisitor):
         pass
 
     def visit_figure(self, node):
-        self.generator.startElement('figure', {'id':node['ids'][0]})
+        if node['ids']:
+            atts = {'id':node['ids'][0]}
+        else:
+            atts = {}
+        self.generator.startElement('figure', atts)
         
     def depart_figure(self, node):
         self.generator.endElement('figure')
