@@ -194,6 +194,12 @@ class IndesignVisitor(NodeVisitor):
     def depart_strong(self, node):
         self.generator.endElement("b")
 
+    def visit_subscript(self, node):
+        self.generator.startElement("sub", {})
+
+    def depart_subscript(self, node):
+        self.generator.endElement("sub")
+
     def visit_title_reference(self, node):
         pass
 
@@ -778,6 +784,12 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_transition(self, node):
         self.generator.endElement('transition')
+
+    def visit_rightshift(self, node):
+        self.generator.startElement('rightshift', {})
+
+    def depart_rightshift(self, node):
+        self.generator.endElement('rightshift')
 
 
 class SingleIndesignVisitor(IndesignVisitor):
