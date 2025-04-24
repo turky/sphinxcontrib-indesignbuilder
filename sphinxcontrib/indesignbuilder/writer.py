@@ -93,7 +93,7 @@ class IndesignVisitor(NodeVisitor):
     def depart_paragraph(self, node):
         if not (self.listenv or self.tableenv or self.footnote_env):
             self.generator.endElement('p')
-        self.newline()
+            self.newline()
 
     def visit_section(self, node):
         assert not self.within_index
