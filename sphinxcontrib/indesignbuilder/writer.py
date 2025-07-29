@@ -21,7 +21,7 @@ class IndesignWriter(Writer):
 
     def translate(self):
         if self.single:
-            self.visitor = visitor = SingleIndesignVisitor(self.document)
+            self.visitor = visitor = SingleIndesignVisitor(self.document, self.builder)
         else:
             self.visitor = visitor = IndesignVisitor(self.document, self.builder)
         self.document.walkabout(visitor)

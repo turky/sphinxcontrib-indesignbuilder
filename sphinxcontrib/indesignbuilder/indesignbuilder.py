@@ -219,7 +219,6 @@ class ChapteredIndesignXMLBuilder(SingleIndesignXMLBuilder):
 
     def write(self, *ignored):
         all_docs = self.env.all_docs
-        self.fignumbers = self.env.toc_fignumbers.get(docname, {})
         chaps = list(set([doc.split('/')[0] for doc in all_docs.keys()]))
         for chap in chaps:
             if chap != 'index':
