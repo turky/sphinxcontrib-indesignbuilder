@@ -41,6 +41,7 @@ class IndesignVisitor(NodeVisitor):
         self.listlevel = 0
         self.adomonienv = None
         self.tableenv = False
+        self.thead_env = False
         self.within_index = False
         self.restrect_newline = False
         self.footnote_env = False
@@ -290,12 +291,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_topic(self, node):
         self._depart_adomonitions(node, 'topic')
-
-    def visit_unknown_visit(self, node):
-        pass
-
-    def depart_unknown_visit(self, node):
-        pass
 
     def visit_number_reference(self, node):
         attrs = {}
@@ -604,45 +599,6 @@ class IndesignVisitor(NodeVisitor):
     def depart_substitution_definition(self, node):
         pass
 
-    def visit_table(self, node):
-        self.tableenv = True
-        self.cols = 0
-        self.generator.startElement('table', {})
-
-    def depart_table(self, node):
-        self.generator.endElement('table')
-        self.tableenv = False
-
-    def visit_tgroup(self, node):
-        #self.generator.startElement('tgroup', {})
-        pass
-
-    def depart_tgroup(self, node):
-        #self.generator.endElement('tgroup')
-        pass
-
-    def visit_colspec(self, node):
-        #self.generator.startElement('colspec', {})
-        pass
-
-    def depart_colspec(self, node):
-        # self.generator.endElement('colspec')
-        pass
-
-    def visit_thead(self, node):
-        self.generator.startElement('thead', {'aid:pstyle': 'header'})
-
-    def depart_thead(self, node):
-        self.generator.endElement('thead')
-
-    def visit_row(self, node):
-        # self.generator.startElement('tr', {})
-        pass
-
-    def depart_row(self, node):
-        # self.generator.endElement('tr')
-        pass
-
     def visit_line_block(self, node):
         pass
 
@@ -654,30 +610,6 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_line(self, node):
         pass
-
-    def visit_entry(self, node):
-        self.generator.startElement('td', {
-                'aid:table': 'cell',
-                'aid:crows': '1',
-                'aid:ccols': '1'
-            })
-
-    def depart_entry(self, node):
-        self.generator.endElement('td')
-        #self.generator.outf.write('\t')
-
-    def visit_tbody(self, node):
-        tcol = str(node.parent.attributes['cols'])
-        trow = str(len(node.children))
-        self.generator.startElement('tbody',
-            {
-                'aid:tcols': tcol,
-                'aid:trows': trow,
-                'aid:table': 'table'
-            })
-
-    def depart_tbody(self, node):
-        self.generator.endElement('tbody')
 
     def visit_problematic(self, node):
         pass
@@ -714,6 +646,7 @@ class IndesignVisitor(NodeVisitor):
         self.tableenv = False
 
     def visit_tgroup(self, node):
+        #logger.info('visit_tgroup')
         #self.generator.startElement('tgroup', {})
         pass
 
@@ -722,36 +655,60 @@ class IndesignVisitor(NodeVisitor):
         pass
 
     def visit_colspec(self, node):
-        self.generator.startElement('colspec', {})
-
-    def depart_colspec(self, node):
-        self.generator.endElement('colspec')
-
-    def visit_thead(self, node):
-        self.generator.startElement('thead', {'aid:pstyle': 'header'})
-
-    def depart_thead(self, node):
-        self.generator.endElement('thead')
-
-    def visit_row(self, node):
-        self.generator.startElement('tr', {})
-
-    def depart_row(self, node):
-        self.generator.endElement('tr')
-
-    def visit_entry(self, node):
-        #self.generator.startElement('entry', {})
+        #self.generator.startElement('colspec', {})
         pass
 
-    def depart_entry(self, node):
-        #self.generator.endElement('entry')
-        self.generator.outf.write('\t')
+    def depart_colspec(self, node):
+        #self.generator.endElement('colspec')
+        pass
+
+    def visit_thead(self, node):
+        self.thead_env = True
+        tcol = str(node.parent.attributes['cols'])
+        trow = str(len(node.children))
+        self.generator.startElement('thead',
+            {
+                'aid:table': 'table',
+                'aid:tcols': tcol,
+                'aid:trows': trow,
+            })
+
+    def depart_thead(self, node):
+        self.thead_env = False
+        self.generator.endElement('thead')
 
     def visit_tbody(self, node):
-        self.generator.startElement('tbody', {})
-
+        tcol = str(node.parent.attributes['cols'])
+        trow = str(len(node.children))
+        self.generator.startElement('tbody',
+            {
+                'aid:tcols': tcol,
+                'aid:trows': trow,
+                'aid:table': 'table'
+            })
+        
     def depart_tbody(self, node):
         self.generator.endElement('tbody')
+
+    def visit_row(self, node):
+        #self.generator.startElement('tr', {})
+        pass
+
+    def depart_row(self, node):
+        #self.generator.endElement('tr')
+        pass
+
+    def visit_entry(self, node):
+        if self.thead_env:
+            self.generator.startElement('th', {'aid:table': 'cell'})
+        else:
+            self.generator.startElement('td', {'aid:table': 'cell'})
+
+    def depart_entry(self, node):
+        if self.thead_env:
+            self.generator.endElement('th')
+        else:
+            self.generator.endElement('td')
 
     def visit_problematic(self, node):
         pass
@@ -790,6 +747,14 @@ class IndesignVisitor(NodeVisitor):
 
     def depart_rightshift(self, node):
         self.generator.endElement('rightshift')
+
+    def visit_unknown_visit(self, node):
+        logger.info('unknown element')
+        #    pass
+
+    def depart_unknown_visit(self, node):
+        pass
+
 
 
 class SingleIndesignVisitor(IndesignVisitor):
